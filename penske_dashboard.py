@@ -35,7 +35,6 @@ if uploaded_file:
 
     with tab1:
         st.header("Monthly Spend by Account and Product")
-        # Add account selector
         account_for_time = st.selectbox("Select Account for Spend Over Time", options=["All Accounts"] + sorted(filtered['Account_Name'].unique()), key="account_tab1")
         filtered['Month'] = filtered['Invoice_Date'].dt.to_period('M').astype(str)
         import plotly.express as px
@@ -43,6 +42,20 @@ if uploaded_file:
             filtered_time = filtered[filtered['Account_Name'] == account_for_time]
         else:
             filtered_time = filtered
+        # Total MRR (sum of all selected rows)
+        total_mrr = filtered_time['Total'].sum()
+        st.subheader(f"Total MRR for selection: ${total_mrr:,.2f}")
+
+        # Total MRR by Price Book
+        st.markdown("**Total MRR by Price Book:**")
+        mrr_by_pricebook = filtered_time.groupby('Price_Book_Price_Book_Name')['Total'].sum().sort_values(ascending=False)
+        st.dataframe(mrr_by_pricebook.reset_index().rename(columns={'Total': 'Total MRR'}))
+
+        # Total MRR by Product
+        st.markdown("**Total MRR by Product:**")
+        mrr_by_product = filtered_time.groupby('Product_Product_Name')['Total'].sum().sort_values(ascending=False)
+        st.dataframe(mrr_by_product.reset_index().rename(columns={'Total': 'Total MRR'}))
+
         # Group by Month and Product
         spend_time = filtered_time.groupby(['Month', 'Product_Product_Name'])['Total'].sum().reset_index()
         fig = px.bar(spend_time, x='Month', y='Total', color='Product_Product_Name', barmode='group',
